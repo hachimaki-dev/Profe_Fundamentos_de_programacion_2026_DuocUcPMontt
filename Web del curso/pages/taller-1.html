@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🧠 Taller: Micro-retos encadenados</title>
+  <meta name="description" content="Taller de 6 niveles con micro-retos cortos para reforzar comparaciones, ifs y whiles." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            cute: ['Quicksand', 'sans-serif'],
+            code: ['Fira Code', 'monospace'],
+          },
+          colors: {
+            kawaii: {
+              pink:    '#fce4ec',
+              rose:    '#f8bbd0',
+              lilac:   '#e1bee7',
+              mint:    '#c8e6c9',
+              sky:     '#b3e5fc',
+              peach:   '#ffe0b2',
+              cream:   '#fffde7',
+              deep:    '#ad1457',
+              text:    '#4a4a4a',
+              correct: '#66bb6a',
+              wrong:   '#ef5350',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Prism.js -->
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+
+  <!-- Mermaid.js -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="../css/main.css" />
+
+  <style>
+    /* Workshop styles */
+    .section-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    .section-pill {
+      padding: 0.5rem 1.2rem;
+      border-radius: 2rem;
+      border: 2px solid rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.5);
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      color: #4a4a4a;
+    }
+    .section-pill.active {
+      background: #f8bbd0;
+      border-color: #f48fb1;
+      color: #ad1457;
+    }
+    
+    .tf-btn, .action-btn {
+      padding: 0.8rem 2rem;
+      border-radius: 0.8rem;
+      border: 2px solid #e1bee7;
+      background: rgba(255,255,255,0.7);
+      font-family: 'Quicksand', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .tf-btn { min-width: 140px; }
+    .action-btn:hover { background: #e1bee7; }
+
+    .tf-btn.true-btn:hover:not(.disabled) { background: #c8e6c9; border-color: #66bb6a; }
+    .tf-btn.false-btn:hover:not(.disabled) { background: #ffcdd2; border-color: #ef5350; }
+    .tf-btn.selected-correct { background: #c8e6c9; border-color: #66bb6a; color: #2e7d32; }
+    .tf-btn.selected-wrong { background: #ffcdd2; border-color: #ef5350; color: #c62828; }
+    .tf-btn.disabled { cursor: default; opacity: 0.7; }
+
+    .score-summary {
+      background: linear-gradient(135deg, #fce4ec, #f3e5f5);
+      border: 2px solid #f8bbd0;
+      border-radius: 1.2rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .score-big {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #ad1457;
+      line-height: 1;
+    }
+
+    /* Match exercise */
+    .match-container {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0.6rem;
+      align-items: stretch;
+      margin-bottom: 0.5rem;
+    }
+    .match-left, .match-right {
+      padding: 0.7rem 1rem;
+      border-radius: 0.6rem;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+    }
+    .match-left {
+      background: #f3e5f5;
+      border: 2px solid #ce93d8;
+      font-weight: 600;
+      justify-content: center;
+      text-align: center;
+    }
+    .match-right {
+      background: rgba(255,255,255,0.7);
+      border: 2px solid #e0e0e0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .match-right:hover:not(.matched) {
+      border-color: #f48fb1;
+      background: #fce4ec;
+    }
+    .match-right.selected {
+      border-color: #7b1fa2;
+      background: #ede7f6;
+      box-shadow: 0 0 0 2px rgba(123,31,162,0.2);
+    }
+    .match-right.matched {
+      border-color: #66bb6a;
+      background: #e8f5e9;
+      cursor: default;
+    }
+    .match-right.wrong {
+      border-color: #ef5350;
+      background: #ffebee;
+      animation: shake 0.4s ease;
+    }
+    .match-arrow {
+      display: flex;
+      align-items: center;
+      color: #ce93d8;
+      font-size: 1.2rem;
+    }
+    .match-arrow.matched { color: #66bb6a; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25%      { transform: translateX(-5px); }
+      75%      { transform: translateX(5px); }
+    }
+    @media (max-width: 640px) {
+      .match-container {
+        grid-template-columns: 1fr;
+        gap: 0.3rem;
+      }
+      .match-arrow { justify-content: center; font-size: 1rem; transform: rotate(90deg); }
+    }
+    
+    /* Write Exercise Terminal */
+    .terminal-box {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: 'Fira Code', monospace;
+      padding: 1.5rem;
+      border-radius: 0.8rem;
+      border-top: 30px solid #333;
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .terminal-box::before {
+      content: "🍎 🟡 🟢";
+      position: absolute;
+      top: -24px;
+      left: 15px;
+      font-size: 12px;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden">
+
+  <!-- Background floating shapes -->
+  <div class="bg-shape" style="width:300px;height:300px;background:#f8bbd0;top:10%;left:-5%;"></div>
+  <div class="bg-shape" style="width:200px;height:200px;background:#b3e5fc;top:60%;right:-3%;"></div>
+  <div class="bg-shape" style="width:250px;height:250px;background:#c8e6c9;bottom:5%;left:40%;"></div>
+
+  <div id="app" class="relative z-10">
+
+    <div class="page-container" style="padding-bottom:0;">
+      <div class="page-header">
+        <a href="../index.html" class="back-btn mb-4">← Volver al diario</a>
+        <h1 class="text-3xl md:text-4xl font-bold text-kawaii-deep mt-4 mb-2">
+          🧠 Taller: Micro-retos encadenados
+        </h1>
+        <p class="text-kawaii-text/70 max-w-2xl text-sm leading-relaxed">
+          Pequeños pasos lógicos para reforzar lo aprendido. 
+          En lugar de un gran ejercicio final, aquí tienes micro-problemas que aumentan su nivel paso a paso.
+          <br><span class="text-xs mt-1 inline-block">Separa la lógica del código y triunfarás. 💪🌸</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Section Navigation -->
+    <div class="max-w-3xl mx-auto px-4 mt-4">
+      <div class="section-nav">
+        <button v-for="lvl in 6" :key="lvl" class="section-pill" :class="{ active: currentLevel === lvl }" @click="goToLevel(lvl)">
+          Nivel {{ lvl }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Dynamic Section for Current Level -->
+    <div class="max-w-3xl mx-auto px-4 pb-16 space-y-8 fade-in-up">
+      
+      <div class="card p-5 text-center">
+        <p class="text-3xl mb-2">{{ levelEmojis[currentLevel - 1] }}</p>
+        <h2 class="text-xl font-bold text-kawaii-deep">{{ levelTitles[currentLevel - 1] }}</h2>
+        <div class="flex justify-center items-center gap-4 mt-3">
+          <span class="text-sm font-semibold text-kawaii-deep">🏆 {{ currentScore }} / {{ currentData.length }}</span>
+          <div class="flex-1 max-w-[200px] bg-kawaii-pink rounded-full h-2.5 overflow-hidden">
+            <div class="progress-fill h-full rounded-full" :style="{ width: currentProgress + '%', background: 'linear-gradient(90deg, #f48fb1, #ce93d8)' }"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loop Exercises -->
+      <div v-for="(ex, idx) in currentData" :key="'ex-'+currentLevel+'-'+idx" class="card p-6 fade-in-up" :style="{ animationDelay: (idx*0.07)+'s' }">
+        
+        <div class="flex items-start gap-3 mb-4">
+          <span class="flex-shrink-0 w-10 h-10 rounded-full bg-kawaii-lilac flex items-center justify-center text-kawaii-deep font-bold text-lg">
+            <span v-if="ex.type === 'write'">💻</span>
+            <span v-else>{{ idx+1 }}</span>
+          </span>
+          <div>
+            <h3 class="font-bold text-lg text-kawaii-deep">{{ ex.title }}</h3>
+            <p class="text-kawaii-text/70 text-sm mt-1" v-if="ex.instruction">{{ ex.instruction }}</p>
+          </div>
+        </div>
+
+        <!-- Statement (TF, Match, Write) -->
+        <p v-if="['tf', 'write', 'match'].includes(ex.type) && ex.statement" class="text-kawaii-text mb-4 leading-relaxed" v-html="ex.statement"></p>
+        
+        <!-- Code (Trace / Choice partially) -->
+        <div v-if="ex.code" class="mb-5 rounded-xl overflow-hidden shadow-sm">
+          <div class="bg-[#2d2d2d] text-xs text-gray-400 px-4 py-1.5 flex items-center gap-2">
+            <span>🐍</span><span>Python</span>
+          </div>
+          <pre class="!mt-0"><code class="language-python" v-html="highlightCode(ex.code)"></code></pre>
+        </div>
+
+        <!-- Mermaid (Flow) -->
+        <div v-if="ex.diagram" class="mb-5 bg-white rounded-xl p-4 shadow-sm flex justify-center">
+          <div :id="'mermaid-flow-'+currentLevel+'-'+idx" class="mermaid">{{ ex.diagram }}</div>
+        </div>
+
+        <div v-if="ex.inputHint" class="mb-4 bg-kawaii-cream rounded-lg px-4 py-2 text-sm border border-yellow-200">
+          📥 <strong>Entrada / Contexto:</strong> {{ ex.inputHint }}
+        </div>
+
+        <p v-if="ex.question" class="font-semibold text-kawaii-text mb-3">{{ ex.question }}</p>
+
+        <!-- TF Options -->
+        <div v-if="ex.type === 'tf'" class="flex gap-3 justify-center">
+          <button class="tf-btn true-btn" :class="{ 'selected-correct': ex.answered && ex.selected === true && ex.correct === true, 'selected-wrong': ex.answered && ex.selected === true && ex.correct !== true, 'disabled': ex.answered }" @click="answerEx(idx, true)" :disabled="ex.answered">
+            ✅ Verdadero
+          </button>
+          <button class="tf-btn false-btn" :class="{ 'selected-correct': ex.answered && ex.selected === false && ex.correct === false, 'selected-wrong': ex.answered && ex.selected === false && ex.correct !== false, 'disabled': ex.answered }" @click="answerEx(idx, false)" :disabled="ex.answered">
+            ❌ Falso
+          </button>
+        </div>
+
+        <!-- Choice / Trace / Flow Options -->
+        <div v-if="['choice', 'trace', 'flow'].includes(ex.type)" class="space-y-2">
+          <button v-for="(opt, oi) in ex.options" :key="oi" class="option-btn" :class="{ 'correct': ex.answered && oi === ex.correct, 'wrong': ex.answered && ex.selected === oi && oi !== ex.correct, 'disabled': ex.answered }" @click="answerEx(idx, oi)" :disabled="ex.answered">
+            <span class="font-bold mr-2 text-kawaii-deep">{{ ['A','B','C','D'][oi] }}.</span>
+            <span v-html="opt"></span>
+            <span v-if="ex.answered && oi === ex.correct" class="float-right bounce">✅</span>
+            <span v-if="ex.answered && ex.selected === oi && oi !== ex.correct" class="float-right bounce">❌</span>
+          </button>
+        </div>
+
+        <!-- Match UI -->
+        <div v-if="ex.type === 'match'">
+          <div v-for="(pair, pIdx) in ex.pairs" :key="pair.id" class="match-container">
+            <div class="match-left"
+                 :class="{ 'cursor-pointer': !pair.matched, 'opacity-60': pair.matched }"
+                 :style="pair.matched ? 'border-color:#66bb6a;background:#e8f5e9' : (selectedLeft && selectedLeft.cIdx === idx && selectedLeft.pIdx === pIdx ? 'border-color:#7b1fa2;background:#ede7f6;box-shadow:0 0 0 2px rgba(123,31,162,0.2)' : '')"
+                 @click="selectMatchLeft(idx, pIdx)"
+                 v-html="pair.left">
+            </div>
+            <div class="match-arrow" :class="{ matched: pair.matched }">
+              <span v-if="pair.matched">✓</span><span v-else>→</span>
+            </div>
+            <div class="match-right"
+                 :class="{ matched: ex.shuffledRights[pIdx].matched, wrong: ex.shuffledRights[pIdx].wrong, selected: selectedRight && selectedRight.cIdx === idx && selectedRight.pIdx === pIdx }"
+                 @click="selectMatchRight(idx, pIdx)"
+                 v-html="ex.shuffledRights[pIdx].text">
+            </div>
+          </div>
+        </div>
+
+        <!-- Write UI -->
+        <div v-if="ex.type === 'write'">
+          <div class="terminal-box">
+            <p v-html="ex.prompt"></p>
+          </div>
+          <div v-if="!ex.answered" class="text-center mt-4">
+            <p class="text-xs text-kawaii-text/60 mb-2">Escribe tu solución mentalmente o en tu cuaderno antes de continuar.</p>
+            <button class="action-btn" @click="revealWrite(idx)">👁️ Ver Solución Propuesta</button>
+          </div>
+        </div>
+
+        <!-- Feedback -->
+        <div v-if="ex.answered && ex.type !== 'write'" class="mt-4 rounded-lg p-4 text-sm" :class="ex.allMatched ? 'bg-kawaii-mint border border-green-300' : (ex.selected === ex.correct ? 'bg-kawaii-mint border border-green-300' : 'bg-kawaii-pink border border-red-200')">
+          <span v-if="ex.allMatched || ex.selected === ex.correct" class="font-bold text-green-700">🎉 ¡Correcto! </span>
+          <span v-else class="font-bold text-red-700">😿 Incorrecto. </span>
+          <span class="text-kawaii-text/80">{{ ex.explanation }}</span>
+        </div>
+
+        <!-- Write Feedback (Solution) -->
+        <div v-if="ex.answered && ex.type === 'write'" class="mt-4 rounded-lg p-4 text-sm bg-kawaii-mint border border-green-300">
+          <span class="font-bold text-green-700 block mb-2">🎉 Solución Recomendada:</span>
+          <div class="rounded-xl overflow-hidden shadow-sm mt-2 mb-2">
+            <div class="bg-[#2d2d2d] text-xs text-gray-400 px-4 py-1.5">🐍 Python</div>
+            <pre class="!mt-0"><code class="language-python" v-html="highlightCode(ex.explanationCode)"></code></pre>
+          </div>
+          <span class="text-kawaii-text/80">{{ ex.explanation }}</span>
+        </div>
+
+      </div>
+
+      <!-- Resumen de Nivel -->
+      <div v-if="currentAllAnswered" class="score-summary fade-in-up mt-8">
+        <p class="text-4xl mb-2">🌟</p>
+        <p class="text-sm text-kawaii-text/60 mb-1">Tu progreso en el Nivel {{ currentLevel }}</p>
+        <p class="score-big">{{ currentScore }} / {{ currentData.length }}</p>
+        <button v-if="currentLevel < 6" @click="goToLevel(currentLevel + 1)" class="mt-4 bg-kawaii-rose hover:bg-[#f48fb1] text-white font-semibold py-2 px-6 rounded-full transition">
+          Siguiente Nivel →
+        </button>
+      </div>
+
+    </div>
+
+    <footer class="site-footer">
+      Hecho con 💖 para Fundamentos de Programación 2026
+    </footer>
+
+  </div>
+
+  <!-- Data -->
+  <script src="../data/taller-1.js"></script>
+
+  <!-- Shared engine -->
+  <script src="../js/app.js"></script>
+
+  <script>
+    const { createApp } = Vue;
+
+    const initStateData = arr => arr.map(e => {
+      let base = { ...e, answered: false, selected: null };
+      if (e.type === 'match') {
+        const shuffled = [...e.pairs].map(p => ({ text: p.right, id: p.id, matched: false, wrong: false }));
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        base.pairs = e.pairs.map(p => ({ ...p, matched: false }));
+        base.shuffledRights = shuffled;
+        base.allMatched = false;
+      }
+      return base;
+    });
+
+    const app = createApp({
+      data() {
+        return {
+          currentLevel: 1,
+          selectedLeft: null,
+          selectedRight: null,
+          levelEmojis: ['🟢', '🟡', '🟠', '🔴', '🔥', '💀'],
+          levelTitles: [
+            'Comparaciones puras (SIN while)',
+            'Decisiones con múltiples caminos',
+            'Introducir while (SIN lógica compleja)',
+            'while + if (pero controlado)',
+            'Input + validación (oro puro)',
+            'Problemas integrados (Cachipún y más)'
+          ],
+          levels: [
+            initStateData(lvl1Data),
+            initStateData(lvl2Data),
+            initStateData(lvl3Data),
+            initStateData(lvl4Data),
+            initStateData(lvl5Data),
+            initStateData(lvl6Data),
+          ]
+        };
+      },
+      computed: {
+        currentData() {
+          return this.levels[this.currentLevel - 1];
+        },
+        currentScore() {
+          return this.currentData.filter(e => {
+            if (e.type === 'match') return e.allMatched;
+            if (e.type === 'write') return e.answered; // write counts as 1 automatically
+            return e.answered && e.selected === e.correct;
+          }).length;
+        },
+        currentProgress() {
+          const ans = this.currentData.filter(e => {
+            if (e.type === 'match') return e.allMatched;
+            return e.answered;
+          }).length;
+          return this.currentData.length ? Math.round(ans / this.currentData.length * 100) : 0;
+        },
+        currentAllAnswered() {
+          return this.currentData.every(e => e.type === 'match' ? e.allMatched : e.answered);
+        }
+      },
+      methods: {
+        highlightCode(code) {
+          return highlightPython(code);
+        },
+        goToLevel(lvl) {
+          this.currentLevel = lvl;
+          this.selectedLeft = null;
+          this.selectedRight = null;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          this.$nextTick(() => {
+            setTimeout(() => renderMermaidDiagrams(), 100);
+          });
+        },
+        answerEx(idx, value) {
+          const ex = this.currentData[idx];
+          if (ex.answered) return;
+          ex.selected = value;
+          ex.answered = true;
+        },
+        revealWrite(idx) {
+          const ex = this.currentData[idx];
+          if (ex.answered) return;
+          ex.answered = true;
+        },
+        // Match logic
+        selectMatchLeft(cIdx, pIdx) {
+          const pair = this.currentData[cIdx].pairs[pIdx];
+          if (pair.matched) return;
+          this.selectedLeft = { cIdx, pIdx };
+          this.tryMatch();
+        },
+        selectMatchRight(cIdx, pIdx) {
+          const item = this.currentData[cIdx].shuffledRights[pIdx];
+          if (item.matched) return;
+          this.selectedRight = { cIdx, pIdx };
+          this.tryMatch();
+        },
+        tryMatch() {
+          if (!this.selectedLeft || !this.selectedRight) return;
+          if (this.selectedLeft.cIdx !== this.selectedRight.cIdx) {
+            this.selectedLeft = null;
+            this.selectedRight = null;
+            return;
+          }
+          const cIdx = this.selectedLeft.cIdx;
+          const leftPair = this.currentData[cIdx].pairs[this.selectedLeft.pIdx];
+          const rightItem = this.currentData[cIdx].shuffledRights[this.selectedRight.pIdx];
+
+          if (leftPair.id === rightItem.id) {
+             leftPair.matched = true;
+             rightItem.matched = true;
+             if (this.currentData[cIdx].pairs.every(p => p.matched)) {
+               this.currentData[cIdx].allMatched = true;
+               this.currentData[cIdx].answered = true;
+             }
+          } else {
+             rightItem.wrong = true;
+             setTimeout(() => { rightItem.wrong = false; }, 600);
+          }
+          this.selectedLeft = null;
+          this.selectedRight = null;
+        }
+      },
+      mounted() {
+        setupMermaid();
+        this.$nextTick(() => renderMermaidDiagrams());
+      }
+    });
+    app.mount('#app');
+  </script>
+</body>
+</html>
